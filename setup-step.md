@@ -6,8 +6,8 @@
 
 * public etcd discovery
 
-|ip|
-|--|
+|ip |
+|---|
 |10.113.232.251  dev-kube001.ncl.nhnsystem.com dev-kube001.ncl|
 |10.113.232.215	 dev-kube002.ncl.nhnsystem.com dev-kube002.ncl|
 |10.113.233.143  dev-kube003.ncl.nhnsystem.com dev-kube003.ncl|
