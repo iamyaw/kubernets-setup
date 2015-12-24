@@ -22,13 +22,15 @@ Linux dev-kube003.ncl 4.3.0-1.el7.elrepo.x86_64 #1 SMP Tue Nov 3 20:15:39 EST 20
 |kubernetes-client-1.0.3-0.2.gitb9a88a7.el7.x86_64|
 |kubernetes-master-1.0.3-0.2.gitb9a88a7.el7.x86_64|
 |kubernetes-node-1.0.3-0.2.gitb9a88a7.el7.x86_64|
+|docker-selinux-1.8.2-7.el7.centos.x86_64|
+|docker-1.8.2-7.el7.centos.x86_64|
 
 ### etcd cluster
 
 * reference document
 
 Clustering Guide
-> https://coreos.com/etcd/docs/latest/clustering.html
+> https://coreos.com/etcd/docs/2.1.0/clustering.html
 
 * public etcd discovery
 
@@ -75,11 +77,29 @@ https://discovery.etcd.io/0128c2d484d36402abafb011e91284ce
  -discovery https://discovery.etcd.io/0128c2d484d36402abafb011e91284ce
 ```
 
+### flannel
+
+* reference document
+
+Configuring flannel for Container Networking
+>https://coreos.com/flannel/docs/0.5.0/flannel-config.html
+
+* publishing config to etcd
+```
+etcdctl set /coreos.com/network/config '{
+  "Network": "10.1.0.0/16",
+  "SubnetLen": 24
+}'
+```
+
 ### kubernetes cluster
 
 * reference document
 
 Kubernetes multiple nodes cluster with flannel on Fedora
-> http://kubernetes.io/v1.1/docs/getting-started-guides/fedora/flannel_multi_node_cluster.html
+>http://kubernetes.io/v1.0/docs/getting-started-guides/fedora/flannel_multi_node_cluster.html
+
+Running Multi-Node Kubernetes Using Docker
+>http://kubernetes.io/v1.0/docs/getting-started-guides/docker-multinode.html
 
 * master setup
