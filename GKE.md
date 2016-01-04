@@ -8,6 +8,7 @@ gke-cluster-1-7157aa8f-node-l38a    104.155.209.96      10.240.0.6
 gke-cluster-1-7157aa8f-node-o0df    107.167.185.223     10.240.0.4
 gke-cluster-1-7157aa8f-node-pn3k    130.211.245.31      10.240.0.3
 ```
+---
 
 ### cluster1-node1
 
@@ -217,6 +218,7 @@ default via 10.240.0.1 dev eth0
 10.120.4.0/24 dev cbr0  proto kernel  scope link  src 10.120.4.1
 10.240.0.1 dev eth0  scope link
 ```
+---
 
 ### cluster1-node2
 
@@ -260,6 +262,7 @@ iamyaw@gke-cluster-1-7157aa8f-node-e8p6:~$ ip addr show dev eth0
     inet 10.240.0.2/32 brd 10.240.0.2 scope global eth0
        valid_lft forever preferred_lft forever
 ```
+---
 
 ### cluster1-node3
 
@@ -301,6 +304,7 @@ iamyaw@gke-cluster-1-7157aa8f-node-l38a:~$ ip addr show dev eth0
     inet 10.240.0.6/32 brd 10.240.0.6 scope global eth0
        valid_lft forever preferred_lft forever
 ```
+---
 
 ### cluster1-node4
 
@@ -342,6 +346,7 @@ iamyaw@gke-cluster-1-7157aa8f-node-o0df:~$ ip addr show dev eth0
     inet 10.240.0.4/32 brd 10.240.0.4 scope global eth0
        valid_lft forever preferred_lft forever
 ```
+---
 
 ### cluster1-node5
 
@@ -379,6 +384,7 @@ iamyaw@gke-cluster-1-7157aa8f-node-pn3k:~$ ip addr show dev eth0
     inet 10.240.0.3/32 brd 10.240.0.3 scope global eth0
        valid_lft forever preferred_lft forever
 ```
+---
 
 ### cluster-master
 
