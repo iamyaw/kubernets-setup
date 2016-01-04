@@ -2,11 +2,13 @@
 
 ### VM instances
 ```
-gke-cluster-1-7157aa8f-node-cdgm    104.155.239.163     10.240.0.5
-gke-cluster-1-7157aa8f-node-e8pz    107.167.184.179     10.240.0.2
-gke-cluster-1-7157aa8f-node-l38a    104.155.209.96      10.240.0.6
-gke-cluster-1-7157aa8f-node-o0df    107.167.185.223     10.240.0.4
-gke-cluster-1-7157aa8f-node-pn3k    130.211.245.31      10.240.0.3
+node                                pubic ip            private eth0    kube? ip        docker cbr0
+master endpoint                     104.199.138.89                      10.123.240.1
+gke-cluster-1-7157aa8f-node-cdgm    104.155.239.163     10.240.0.5      10.123.240.10   10.120.4.1/24
+gke-cluster-1-7157aa8f-node-e8pz    107.167.184.179     10.240.0.2      10.123.250.110  10.120.2.1/24
+gke-cluster-1-7157aa8f-node-l38a    104.155.209.96      10.240.0.6      10.123.241.138  10.120.0.1/24
+gke-cluster-1-7157aa8f-node-o0df    107.167.185.223     10.240.0.4      10.123.240.138  10.120.1.1/24
+gke-cluster-1-7157aa8f-node-pn3k    130.211.245.31      10.240.0.3                      10.120.3.1/24
 ```
 ---
 
@@ -127,6 +129,13 @@ root     10091  3223  0 22:58 ?        00:00:00 sleep 10
 iamyaw   10095  9524  0 22:58 pts/0    00:00:00 ps -ef
 ```
 
+#### dockerd cmd arg
+```
+iamyaw@gke-cluster-1-7157aa8f-node-cdgm:~$ ps -ef | grep docker
+root      8032  3211  0 06:46 ?        00:00:00 /bin/bash /usr/sbin/docker-checker.sh
+root      8075     1  1 06:46 ?        00:02:31 /usr/bin/docker -d -p /var/run/docker.pid --insecure-registry 10.0.0.0/8 --bridge=cbr0 --iptables=false --ip-masq=false
+```
+
 #### docker ps
 ```
 iamyaw@gke-cluster-1-7157aa8f-node-cdgm:~$ sudo docker ps -a
@@ -152,12 +161,6 @@ gcr.io/google_containers/etcd          2.0.9                b6b9a86dc06a        
 gcr.io/google_containers/pause         0.8.0                2c40b0526b63        9 months ago        241.7 kB
 ```
 
-#### etcd command arg
-```
-iamyaw@gke-cluster-1-7157aa8f-node-cdgm:~$ ps -ef | grep etcd
-root      4237  3509  0 22:34 ?        00:00:19 /usr/local/bin/etcd -data-dir /var/etcd/data -listen-client-urls http://127.0.0.1:2379,http://127.0.0.1:4001 -advertise-client-urls http://127.0.0.1:2379,http://127.0.0.1:4001 -initial-cluster-token skydns-etcd
-```
-
 #### kubernetes ps
 ```
 iamyaw@gke-cluster-1-7157aa8f-node-cdgm:~$ ps -ef | grep kube
@@ -168,6 +171,18 @@ root      3273     1  0 22:30 ?        00:00:13 /usr/local/bin/kube-proxy --mast
 root      4356  3509  0 22:34 ?        00:00:00 /kube2sky -domain=cluster.local
 root      4630  3509  0 22:35 ?        00:00:01 /exechealthz -cmd=nslookup kubernetes.default.svc.cluster.local localhost >/dev/null -port=8080
 iamyaw   22353 20251  0 23:51 pts/2    00:00:00 grep kube
+```
+
+### TCP listen
+```
+iamyaw@gke-cluster-1-7157aa8f-node-cdgm:~$ sudo netstat -ntlp4
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+tcp        0      0 0.0.0.0:50149           0.0.0.0:*               LISTEN      1792/rpc.statd
+tcp        0      0 127.0.0.1:10248         0.0.0.0:*               LISTEN      7943/kubelet
+tcp        0      0 127.0.0.1:10249         0.0.0.0:*               LISTEN      3273/kube-proxy
+tcp        0      0 0.0.0.0:111             0.0.0.0:*               LISTEN      1761/rpcbind
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      2478/sshd
 ```
 
 #### shell script
@@ -190,7 +205,7 @@ root     24272  2548  0 23:59 ?        00:00:00 /usr/bin/python /usr/share/googl
 iamyaw   24338 20251  0 23:59 pts/2    00:00:00 grep python
 ```
 
-#### ip addr
+#### ip addr route
 ```
 iamyaw@gke-cluster-1-7157aa8f-node-cdgm:~$ ip addr
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
@@ -209,14 +224,59 @@ iamyaw@gke-cluster-1-7157aa8f-node-cdgm:~$ ip addr
     link/ether ae:3b:7b:cc:f6:a6 brd ff:ff:ff:ff:ff:ff
 12: vethb4c31b6: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1460 qdisc noqueue master cbr0 state UP
     link/ether de:c4:1f:57:ac:da brd ff:ff:ff:ff:ff:ff
-```
 
-#### ip route
-```
 iamyaw@gke-cluster-1-7157aa8f-node-cdgm:~$ ip route
 default via 10.240.0.1 dev eth0
 10.120.4.0/24 dev cbr0  proto kernel  scope link  src 10.120.4.1
 10.240.0.1 dev eth0  scope link
+```
+
+#### etcd command arg
+```
+iamyaw@gke-cluster-1-7157aa8f-node-cdgm:~$ ps -ef | grep etcd
+root      4237  3509  0 22:34 ?        00:00:19 /usr/local/bin/etcd -data-dir /var/etcd/data -listen-client-urls http://127.0.0.1:2379,http://127.0.0.1:4001 -advertise-client-urls http://127.0.0.1:2379,http://127.0.0.1:4001 -initial-cluster-token skydns-etcd
+```
+
+### etcd key values
+```
+iamyaw@gke-cluster-1-7157aa8f-node-cdgm:~$ sudo docker exec 2a10b441106b /usr/local/bin/etcdctl member list
+6a5871dbdd12c17c: name=default peerURLs=http://localhost:2380,http://localhost:7001 clientURLs=http://127.0.0.1:2379,http://127.0.0.1:4001
+
+iamyaw@gke-cluster-1-7157aa8f-node-cdgm:~$ sudo docker exec 2a10b441106b /usr/local/bin/etcdctl ls --recursive
+/skydns
+/skydns/local
+/skydns/local/cluster
+/skydns/local/cluster/default
+/skydns/local/cluster/default/kubernetes
+/skydns/local/cluster/kube-system
+/skydns/local/cluster/kube-system/default-http-backend
+/skydns/local/cluster/kube-system/heapster
+/skydns/local/cluster/kube-system/kube-dns
+/skydns/local/cluster/kube-system/kube-ui
+/skydns/local/cluster/svc
+/skydns/local/cluster/svc/default
+/skydns/local/cluster/svc/default/kubernetes
+/skydns/local/cluster/svc/default/kubernetes/805e927
+/skydns/local/cluster/svc/kube-system
+/skydns/local/cluster/svc/kube-system/kube-ui
+/skydns/local/cluster/svc/kube-system/kube-ui/610a07cf
+/skydns/local/cluster/svc/kube-system/default-http-backend
+/skydns/local/cluster/svc/kube-system/default-http-backend/fe576db
+/skydns/local/cluster/svc/kube-system/heapster
+/skydns/local/cluster/svc/kube-system/heapster/fbb1ecda
+/skydns/local/cluster/svc/kube-system/kube-dns
+/skydns/local/cluster/svc/kube-system/kube-dns/eca240e3
+
+iamyaw@gke-cluster-1-7157aa8f-node-cdgm:~$ sudo docker exec 2a10b441106b /usr/local/bin/etcdctl get /skydns/local/cluster/default/kubernetes
+{"host":"10.123.240.1","priority":10,"weight":10,"ttl":30,"targetstrip":0}
+iamyaw@gke-cluster-1-7157aa8f-node-cdgm:~$ sudo docker exec 2a10b441106b /usr/local/bin/etcdctl get /skydns/local/cluster/kube-system/kube-dns
+{"host":"10.123.240.10","priority":10,"weight":10,"ttl":30,"targetstrip":0}
+iamyaw@gke-cluster-1-7157aa8f-node-cdgm:~$ sudo docker exec 2a10b441106b /usr/local/bin/etcdctl get /skydns/local/cluster/kube-system/kube-ui
+{"host":"10.123.241.138","priority":10,"weight":10,"ttl":30,"targetstrip":0}
+iamyaw@gke-cluster-1-7157aa8f-node-cdgm:~$ sudo docker exec 2a10b441106b /usr/local/bin/etcdctl get /skydns/local/cluster/kube-system/default-http-backend
+{"host":"10.123.250.110","priority":10,"weight":10,"ttl":30,"targetstrip":0}
+iamyaw@gke-cluster-1-7157aa8f-node-cdgm:~$ sudo docker exec 2a10b441106b /usr/local/bin/etcdctl get /skydns/local/cluster/kube-system/heapster
+{"host":"10.123.240.138","priority":10,"weight":10,"ttl":30,"targetstrip":0}
 ```
 ---
 
@@ -252,6 +312,18 @@ root      3277     1  1 Jan02 ?        00:10:51 /usr/local/bin/kubelet --api-ser
 root      3278     1  0 Jan02 ?        00:01:30 /usr/local/bin/kube-proxy --master=https://104.199.138.89 --kubeconfig=/var/lib/kube-proxy/kubeconfig --v=2
 root      4437  3504  0 Jan02 ?        00:00:17 /glbc --default-backend-service=kube-system/default-http-backend --sync-period=300s
 iamyaw    7805  7291  0 08:12 pts/1    00:00:00 grep kube
+```
+
+#### TCP listen
+```
+iamyaw@gke-cluster-1-7157aa8f-node-e8p6:~$ sudo netstat -tnlp4
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+tcp        0      0 127.0.0.1:10248         0.0.0.0:*               LISTEN      3277/kubelet
+tcp        0      0 127.0.0.1:10249         0.0.0.0:*               LISTEN      3278/kube-proxy
+tcp        0      0 0.0.0.0:55052           0.0.0.0:*               LISTEN      1796/rpc.statd
+tcp        0      0 0.0.0.0:111             0.0.0.0:*               LISTEN      1765/rpcbind
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      2494/sshd
 ```
 
 #### ip addr eth0
@@ -296,6 +368,18 @@ root      4203  3508  0 Jan02 ?        00:00:02 /kube-ui
 iamyaw    7270  6823  0 08:12 pts/0    00:00:00 grep kube
 ```
 
+#### TCP listen
+```
+iamyaw@gke-cluster-1-7157aa8f-node-l38a:~$ sudo netstat -tnlp4
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+tcp        0      0 127.0.0.1:10248         0.0.0.0:*               LISTEN      3275/kubelet
+tcp        0      0 127.0.0.1:10249         0.0.0.0:*               LISTEN      3273/kube-proxy
+tcp        0      0 0.0.0.0:111             0.0.0.0:*               LISTEN      1762/rpcbind
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      2489/sshd
+tcp        0      0 0.0.0.0:59416           0.0.0.0:*               LISTEN      1795/rpc.statd
+```
+
 #### ip addr eth0
 ```
 iamyaw@gke-cluster-1-7157aa8f-node-l38a:~$ ip addr show dev eth0
@@ -338,6 +422,18 @@ root      4265  3510  1 Jan02 ?        00:06:27 /heapster --source=kubernetes:''
 iamyaw    7437  6986  0 08:12 pts/1    00:00:00 grep kube
 ```
 
+#### TCP listen
+```
+iamyaw@gke-cluster-1-7157aa8f-node-o0df:~$ sudo netstat -tnlp4
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+tcp        0      0 127.0.0.1:10248         0.0.0.0:*               LISTEN      3280/kubelet
+tcp        0      0 0.0.0.0:56616           0.0.0.0:*               LISTEN      1797/rpc.statd
+tcp        0      0 127.0.0.1:10249         0.0.0.0:*               LISTEN      3278/kube-proxy
+tcp        0      0 0.0.0.0:111             0.0.0.0:*               LISTEN      1766/rpcbind
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      2493/sshd
+```
+
 #### ip addr eth0
 ```
 iamyaw@gke-cluster-1-7157aa8f-node-o0df:~$ ip addr show dev eth0
@@ -376,6 +472,18 @@ root      3222     1  1 Jan02 ?        00:08:29 /usr/local/bin/kubelet --api-ser
 iamyaw    5851  5453  0 08:12 pts/0    00:00:00 grep kube
 ```
 
+#### TCP listen
+```
+iamyaw@gke-cluster-1-7157aa8f-node-pn3k:~$ sudo netstat -tnlp4
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+tcp        0      0 127.0.0.1:10248         0.0.0.0:*               LISTEN      3222/kubelet
+tcp        0      0 0.0.0.0:49800           0.0.0.0:*               LISTEN      1797/rpc.statd
+tcp        0      0 127.0.0.1:10249         0.0.0.0:*               LISTEN      3220/kube-proxy
+tcp        0      0 0.0.0.0:111             0.0.0.0:*               LISTEN      1766/rpcbind
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      2518/sshd
+```
+
 #### ip addr eth0
 ```
 iamyaw@gke-cluster-1-7157aa8f-node-pn3k:~$ ip addr show dev eth0
@@ -387,6 +495,16 @@ iamyaw@gke-cluster-1-7157aa8f-node-pn3k:~$ ip addr show dev eth0
 ---
 
 ### cluster-master
+
+#### cluster info
+```
+iamyaw@iamyaw-cloud:~$ kubectl cluster-info
+Kubernetes master is running at https://104.199.138.89
+GLBCDefaultBackend is running at https://104.199.138.89/api/v1/proxy/namespaces/kube-system/services/default-http-backend
+Heapster is running at https://104.199.138.89/api/v1/proxy/namespaces/kube-system/services/heapster
+KubeDNS is running at https://104.199.138.89/api/v1/proxy/namespaces/kube-system/services/kube-dns
+KubeUI is running at https://104.199.138.89/api/v1/proxy/namespaces/kube-system/services/kube-ui
+```
 
 #### kubernetes nodes services namespaces components endpoints
 ```
@@ -500,3 +618,81 @@ users:
     password: mq66VGUqH5jDDvOI
     username: admin
 ```
+---
+
+### docker
+
+#### master
+```
+/etcdctl get /skydns/local/cluster/default/kubernetes
+{"host":"10.123.240.1","priority":10,"weight":10,"ttl":30,"targetstrip":0}
+```
+
+#### docker at node1
+```
+iamyaw@gke-cluster-1-7157aa8f-node-cdgm:~$ sudo docker ps
+CONTAINER ID        IMAGE                                                COMMAND                  CREATED             STATUS              PORTS               NAMES
+67a2f9741ddd        gcr.io/google_containers/exechealthz:1.0             "/exechealthz '-cmd=n"   2 hours ago         Up 2 hours                              k8s_healthz.fab416b0_kube-dns-v9-nq173_kube-system_7f3aa873-b1a0-11e5-b20d-42010af000de_b4667a6f
+21d7be81f528        gcr.io/google_containers/skydns:2015-10-13-8c72f8c   "/skydns -machines=ht"   2 hours ago         Up 2 hours                              k8s_skydns.b6d2145c_kube-dns-v9-nq173_kube-system_7f3aa873-b1a0-11e5-b20d-42010af000de_e5c74a73
+056d5d7d5633        gcr.io/google_containers/kube2sky:1.11               "/kube2sky -domain=cl"   2 hours ago         Up 2 hours                              k8s_kube2sky.529ede94_kube-dns-v9-nq173_kube-system_7f3aa873-b1a0-11e5-b20d-42010af000de_98adaac4
+d8aeaef6eb18        gcr.io/google_containers/fluentd-gcp:1.14            "/bin/sh -c '/usr/sbi"   2 hours ago         Up 2 hours                              k8s_fluentd-cloud-logging.d2410c63_fluentd-cloud-logging-gke-cluster-1-7157aa8f-node-cdgm_kube-system_632e2edb4c1261f8db2169ec87ee822a_aabd918b
+2a10b441106b        gcr.io/google_containers/etcd:2.0.9                  "/usr/local/bin/etcd "   2 hours ago         Up 2 hours                              k8s_etcd.ee82335b_kube-dns-v9-nq173_kube-system_7f3aa873-b1a0-11e5-b20d-42010af000de_cf722ce8
+6e42c1ceee50        gcr.io/google_containers/pause:0.8.0                 "/pause"                 2 hours ago         Up 2 hours                              k8s_POD.6d00e006_fluentd-cloud-logging-gke-cluster-1-7157aa8f-node-cdgm_kube-system_632e2edb4c1261f8db2169ec87ee822a_35e5ef4e
+49098a12c494        gcr.io/google_containers/pause:0.8.0                 "/pause"                 2 hours ago         Up 2 hours                              k8s_POD.63f848fb_kube-dns-v9-nq173_kube-system_7f3aa873-b1a0-11e5-b20d-42010af000de_ed883e2e
+
+/etcdctl get /skydns/local/cluster/kube-system/kube-dns
+{"host":"10.123.240.10","priority":10,"weight":10,"ttl":30,"targetstrip":0}
+```
+
+#### docker at node2
+```
+iamyaw@gke-cluster-1-7157aa8f-node-e8p6:~$ sudo docker ps
+CONTAINER ID        IMAGE                                         COMMAND                  CREATED             STATUS              PORTS               NAMES
+4f5a1e3dab7e        gcr.io/google_containers/defaultbackend:1.0   "/server"                34 hours ago        Up 34 hours                             k8s_default-http-backend.e2ec6c5f_l7-lb-controller-iudmz_kube-system_7f3a4447-b1a0-11e5-b20d-42010af000de_c61c2bbe
+f4768ded0a45        gcr.io/google_containers/glbc:0.5.1           "/glbc --default-back"   34 hours ago        Up 34 hours                             k8s_l7-lb-controller.b3da613c_l7-lb-controller-iudmz_kube-system_7f3a4447-b1a0-11e5-b20d-42010af000de_505f926f
+87238de501fe        gcr.io/google_containers/fluentd-gcp:1.14     "/bin/sh -c '/usr/sbi"   34 hours ago        Up 34 hours                             k8s_fluentd-cloud-logging.d2410c63_fluentd-cloud-logging-gke-cluster-1-7157aa8f-node-e8p6_kube-system_632e2edb4c1261f8db2169ec87ee822a_d3f0cd4f
+91ab494631c4        gcr.io/google_containers/pause:0.8.0          "/pause"                 34 hours ago        Up 34 hours                             k8s_POD.68110139_l7-lb-controller-iudmz_kube-system_7f3a4447-b1a0-11e5-b20d-42010af000de_b8cd3609
+5bc79aaa1573        gcr.io/google_containers/pause:0.8.0          "/pause"                 34 hours ago        Up 34 hours                             k8s_POD.6d00e006_fluentd-cloud-logging-gke-cluster-1-7157aa8f-node-e8p6_kube-system_632e2edb4c1261f8db2169ec87ee822a_8ba11cd9
+
+/etcdctl get /skydns/local/cluster/kube-system/default-http-backend
+{"host":"10.123.250.110","priority":10,"weight":10,"ttl":30,"targetstrip":0}
+```
+
+#### docker at node3
+```
+iamyaw@gke-cluster-1-7157aa8f-node-l38a:~$ sudo docker ps
+CONTAINER ID        IMAGE                                       COMMAND                  CREATED             STATUS              PORTS               NAMES
+5f28173603c4        gcr.io/google_containers/kube-ui:v2         "/kube-ui"               34 hours ago        Up 34 hours                             k8s_kube-ui.8a3f618a_kube-ui-v2-z5zva_kube-system_7f39bcfc-b1a0-11e5-b20d-42010af000de_f1b31781
+04457b91e5a9        gcr.io/google_containers/fluentd-gcp:1.14   "/bin/sh -c '/usr/sbi"   34 hours ago        Up 34 hours                             k8s_fluentd-cloud-logging.d2410c63_fluentd-cloud-logging-gke-cluster-1-7157aa8f-node-l38a_kube-system_632e2edb4c1261f8db2169ec87ee822a_8cd3966c
+35c141caa859        gcr.io/google_containers/pause:0.8.0        "/pause"                 34 hours ago        Up 34 hours                             k8s_POD.68110139_kube-ui-v2-z5zva_kube-system_7f39bcfc-b1a0-11e5-b20d-42010af000de_7a5fe9c7
+348d5956c1af        gcr.io/google_containers/pause:0.8.0        "/pause"                 34 hours ago        Up 34 hours                             k8s_POD.6d00e006_fluentd-cloud-logging-gke-cluster-1-7157aa8f-node-l38a_kube-system_632e2edb4c1261f8db2169ec87ee822a_4e4b6a32
+
+/etcdctl get /skydns/local/cluster/kube-system/kube-ui
+{"host":"10.123.241.138","priority":10,"weight":10,"ttl":30,"targetstrip":0}
+```
+
+#### docker at node4
+```
+iamyaw@gke-cluster-1-7157aa8f-node-o0df:~$ sudo docker ps
+CONTAINER ID        IMAGE                                       COMMAND                  CREATED             STATUS              PORTS               NAMES
+0cab9c1bea9b        gcr.io/google_containers/heapster:v0.18.2   "/heapster --source=k"   34 hours ago        Up 34 hours                             k8s_heapster.fdae40a_heapster-v10-jcblx_kube-system_7f3a4fa8-b1a0-11e5-b20d-42010af000de_53a9d358
+62d35b57c813        gcr.io/google_containers/fluentd-gcp:1.14   "/bin/sh -c '/usr/sbi"   34 hours ago        Up 34 hours                             k8s_fluentd-cloud-logging.d2410c63_fluentd-cloud-logging-gke-cluster-1-7157aa8f-node-o0df_kube-system_632e2edb4c1261f8db2169ec87ee822a_16a93266
+df3a6dcdaf72        gcr.io/google_containers/pause:0.8.0        "/pause"                 34 hours ago        Up 34 hours                             k8s_POD.6d00e006_heapster-v10-jcblx_kube-system_7f3a4fa8-b1a0-11e5-b20d-42010af000de_fbc374bc
+cb59351d3bd0        gcr.io/google_containers/pause:0.8.0        "/pause"                 34 hours ago        Up 34 hours                             k8s_POD.6d00e006_fluentd-cloud-logging-gke-cluster-1-7157aa8f-node-o0df_kube-system_632e2edb4c1261f8db2169ec87ee822a_27da9f92
+
+/etcdctl get /skydns/local/cluster/kube-system/heapster
+{"host":"10.123.240.138","priority":10,"weight":10,"ttl":30,"targetstrip":0}
+```
+
+#### docker at node5
+```
+iamyaw@gke-cluster-1-7157aa8f-node-pn3k:~$ sudo docker ps
+CONTAINER ID        IMAGE                                       COMMAND                  CREATED             STATUS              PORTS               NAMES
+e52188f7d32d        gcr.io/google_containers/fluentd-gcp:1.14   "/bin/sh -c '/usr/sbi"   34 hours ago        Up 34 hours                             k8s_fluentd-cloud-logging.d2410c63_fluentd-cloud-logging-gke-cluster-1-7157aa8f-node-pn3k_kube-system_632e2edb4c1261f8db2169ec87ee822a_12dcdb55
+0babb795404d        gcr.io/google_containers/pause:0.8.0        "/pause"                 34 hours ago        Up 34 hours                             k8s_POD.6d00e006_fluentd-cloud-logging-gke-cluster-1-7157aa8f-node-pn3k_kube-system_632e2edb4c1261f8db2169ec87ee822a_38096b39
+```
+---
+
+### google startup script
+
+/etc/init.d/google-startup-script --> /usr/share/google/run-startup-script --> /usr/share/google/fetch-script + /usr/share/google/run-scripts --> /var/run/google.startup.script
